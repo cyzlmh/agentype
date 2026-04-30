@@ -1,0 +1,51 @@
+[project]
+name = "agentype-cli"
+version = "0.1.0"
+description = "Local AI-agent usage analytics and persona archetypes"
+readme = "README.md"
+authors = [
+    { name = "Agentype contributors" }
+]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = [
+    "cairosvg>=2.9.0",
+    "click>=8.3.3",
+    "pillow>=12.2.0",
+    "python-frontmatter>=1.1.0",
+    "rich>=15.0.0",
+]
+keywords = ["ai-agents", "analytics", "cli", "persona", "tokens"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/cyzlmh/agentype"
+Repository = "https://github.com/cyzlmh/agentype"
+Issues = "https://github.com/cyzlmh/agentype/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+agentype = "agentype:main"
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "agentype"
