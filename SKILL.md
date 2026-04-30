@@ -1,7 +1,7 @@
 ---
 name: agentype
 description: Analyze local AI-agent usage across Claude Code, Codex, OpenCode, pi-agent, Gemini CLI, OpenClaw, Nanobot, and configured Nanobot-compatible roots to produce a token overview, trends, preferences, and skill signals. The triggering agent should infer a persona from the deterministic output. Use when the user asks to understand their agent usage, AI workflow, token footprint, preferred agents/models/projects, or "agentype".
-version: 0.1.0
+version: 0.1.1
 tags: [ai-agents, analytics, persona, tokens, local-first]
 ---
 
@@ -35,7 +35,7 @@ Agentype collects local session and token metadata from supported agents where a
 - Nanobot
 - Nanobot-compatible JSONL roots configured through `AGENTYPE_NANOBOT_ROOTS`
 
-Agentype is fully local and makes no network requests by default. It reads agent history from disk and prints a terminal summary. The BYOK `--llm-*` options are available for users who want Agentype to call an LLM directly, but the skill should prefer the default deterministic path and handle persona inference on the agent side.
+Agentype is fully local in this skill workflow. It reads agent history from disk and prints a terminal summary. Handle persona inference on the agent side rather than asking the CLI to contact external model services.
 
 ## Run
 
@@ -75,8 +75,6 @@ For unsupported agent layouts, tell the user the collector paths live in `src/ag
 - `--json-out`: writes `output/agentype.json` with the full analysis.
 - `--json-in PATH`: renders a previously written Agentype JSON file. Use this after filling top-level persona fields.
 - `--png-out`: writes `output/agentype.png`, a shareable poster-style summary for chat or IM environments.
-- `--llm-base-url URL --llm-api-key KEY --llm-model MODEL`: opt into LLM persona discovery (BYOK, OpenAI-compatible API). Flags or env vars (`AGENTYPE_LLM_BASE_URL`, `AGENTYPE_LLM_API_KEY`, `AGENTYPE_LLM_MODEL`).
-
 ## Agent Instructions
 
 When the user invokes this skill:
