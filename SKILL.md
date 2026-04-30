@@ -58,13 +58,6 @@ pipx install agentype-cli
 agentype
 ```
 
-Before the PyPI package is published, install from GitHub:
-
-```bash
-pipx install git+https://github.com/cyzlmh/agentype.git
-agentype
-```
-
 ## Custom Local Paths
 
 If a user's agent history lives outside the default locations, ask for the relevant root and configure it before running Agentype. Nanobot-compatible JSONL roots can be added with `AGENTYPE_NANOBOT_ROOTS`:

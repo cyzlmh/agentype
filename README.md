@@ -27,7 +27,7 @@ AGENTYPE_NANOBOT_ROOTS="/path/to/app:/path/to/another/app" agentype
 
 ## Install
 
-Once Agentype is published to PyPI, the recommended CLI install will be:
+The recommended CLI install is:
 
 ```bash
 pipx install agentype-cli
@@ -38,13 +38,6 @@ If you do not use `pipx`, a regular pip install should also work:
 
 ```bash
 pip install agentype-cli
-agentype
-```
-
-Before the public package is published, install from the GitHub repository:
-
-```bash
-pipx install git+https://github.com/cyzlmh/agentype.git
 agentype
 ```
 
