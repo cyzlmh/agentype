@@ -28,7 +28,7 @@ GREEN = "#22C55E"
 CYAN = "#38BDF8"
 AMBER = "#F59E0B"
 ROW_COLORS = ["#38BDF8", "#22C55E", "#F59E0B", "#A78BFA", "#F472B6"]
-GITHUB_URL = "https://github.com/cyzlmh/agentype"
+GITHUB_URL = "https://github.com/cyzlmh/agentype/blob/main/SKILL.md"
 QR_SIZE = 132
 
 
@@ -244,7 +244,8 @@ def _layout_footer(
     if do_draw:
         draw.text((PAD, y), f"generated {generated_at}", font=_font(22), fill=FAINT)
         draw.text((PAD, y + 34), "github.com/cyzlmh/agentype", font=_font(22), fill=CYAN)
-        draw.text((PAD, y + 82), "agentype", font=_font(22, bold=True), fill=GREEN)
+        draw.text((PAD, y + 60), "scan to run your agentype", font=_font(19), fill=MUTED)
+        draw.text((PAD, y + 90), "agentype", font=_font(22, bold=True), fill=GREEN)
         if image is not None:
             qr = _github_qr()
             image.paste(qr, (WIDTH - PAD - QR_SIZE, y))
@@ -259,7 +260,8 @@ def _github_qr() -> Image.Image:
     )
     qr.add_data(GITHUB_URL)
     qr.make(fit=True)
-    return qr.make_image(fill_color=BG, back_color=TEXT).convert("RGB")
+    img = qr.make_image(fill_color=BG, back_color=TEXT).convert("RGB")
+    return img.resize((QR_SIZE, QR_SIZE), Image.NEAREST)
 
 
 def _panel(draw: ImageDraw.ImageDraw, y: int, height: int) -> None:

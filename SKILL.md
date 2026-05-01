@@ -2,7 +2,7 @@
 name: agentype
 description: >-
   Run the Agentype workflow for local AI-agent usage analysis: collect and cache deterministic JSON, infer a persona/archetype from aggregate usage signals, then render a terminal summary or PNG poster. Supports Claude Code, Codex, OpenCode, pi-agent, Gemini CLI, OpenClaw, Nanobot, and configured Nanobot-compatible roots. Use when the user asks to understand their agent usage, AI workflow, token footprint, preferred agents/models/projects, or "agentype".
-version: 0.1.7
+version: 0.1.8
 tags: [ai-agents, analytics, persona, tokens, local-first]
 ---
 

@@ -1,6 +1,6 @@
 [project]
 name = "agentype-cli"
-version = "0.1.7"
+version = "0.1.8"
 description = "Local AI-agent usage analytics and persona archetypes"
 readme = "README.md"
 authors = [
