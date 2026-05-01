@@ -4,7 +4,7 @@ from PIL import Image
 
 from agentype import _poster_text
 from agentype.analysis import Discovery, ThemeScore, build_agentype_overview, build_usage_report
-from agentype.card import _display_period, _trend_groups, render_overview_card
+from agentype.card import QR_SIZE, _display_period, _github_qr, _trend_groups, render_overview_card
 from agentype.sources.base import SessionEvent, TokenUsage
 
 
@@ -88,6 +88,13 @@ def test_poster_uses_monthly_and_weekly_usage_trends() -> None:
     assert [item.period for item in monthly[1]] == ["2026-04"]
     assert weekly[0] == "Weekly"
     assert [_display_period(item.period) for item in weekly[1]] == ["2026-04-27..05-03"]
+
+
+def test_github_qr_has_fixed_poster_size() -> None:
+    qr = _github_qr()
+
+    assert qr.size == (QR_SIZE, QR_SIZE)
+    assert qr.mode == "RGB"
 
 
 def test_render_overview_card_expands_for_long_llm_persona(tmp_path: Path) -> None:

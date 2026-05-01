@@ -8,6 +8,7 @@ import textwrap
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+import qrcode
 
 from .analysis import AgentypeOverview, PeriodStats
 
@@ -27,6 +28,8 @@ GREEN = "#22C55E"
 CYAN = "#38BDF8"
 AMBER = "#F59E0B"
 ROW_COLORS = ["#38BDF8", "#22C55E", "#F59E0B", "#A78BFA", "#F472B6"]
+GITHUB_URL = "https://github.com/cyzlmh/agentype"
+QR_SIZE = 132
 
 
 def render_overview_card(
@@ -40,7 +43,7 @@ def render_overview_card(
     height = _measure_overview_height(overview, generated_at)
     img = Image.new("RGB", (WIDTH, height), BG)
     draw = ImageDraw.Draw(img)
-    _draw_overview(draw, overview, generated_at, height)
+    _draw_overview(img, draw, overview, generated_at, height)
 
     img.save(str(output_path), "PNG")
     return output_path
@@ -58,6 +61,7 @@ def _measure_overview_height(overview: AgentypeOverview, generated_at: str) -> i
 
 
 def _draw_overview(
+    img: Image.Image,
     draw: ImageDraw.ImageDraw,
     overview: AgentypeOverview,
     generated_at: str,
@@ -67,8 +71,7 @@ def _draw_overview(
     y = _layout_token_block(draw, overview, y + 64, do_draw=True)
     y = _layout_breakdowns(draw, overview, y + 58, do_draw=True)
     y = _layout_usage_rhythm(draw, overview, y + 30, do_draw=True)
-    _layout_footer(draw, generated_at, y + 34, do_draw=True)
-    draw.text((WIDTH - PAD - 116, height - PAD + 16), "agentype", font=_font(22, bold=True), fill=GREEN)
+    _layout_footer(draw, generated_at, y + 34, do_draw=True, image=img)
 
 
 def _layout_header(
@@ -227,10 +230,34 @@ def _layout_usage_rhythm(
     return y + panel_h
 
 
-def _layout_footer(draw: ImageDraw.ImageDraw, generated_at: str, y: int, *, do_draw: bool) -> int:
+def _layout_footer(
+    draw: ImageDraw.ImageDraw,
+    generated_at: str,
+    y: int,
+    *,
+    do_draw: bool,
+    image: Image.Image | None = None,
+) -> int:
     if do_draw:
         draw.text((PAD, y), f"generated {generated_at}", font=_font(22), fill=FAINT)
-    return y + 34
+        draw.text((PAD, y + 34), "github.com/cyzlmh/agentype", font=_font(22), fill=CYAN)
+        draw.text((PAD, y + 68), "scan for source, install docs, and marketplace links", font=_font(19), fill=MUTED)
+        draw.text((PAD, y + 104), "agentype", font=_font(22, bold=True), fill=GREEN)
+        if image is not None:
+            qr = _github_qr()
+            image.paste(qr, (WIDTH - PAD - QR_SIZE, y))
+    return y + QR_SIZE
+
+
+def _github_qr() -> Image.Image:
+    qr = qrcode.QRCode(
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=4,
+        border=2,
+    )
+    qr.add_data(GITHUB_URL)
+    qr.make(fit=True)
+    return qr.make_image(fill_color=BG, back_color=TEXT).convert("RGB")
 
 
 def _panel(draw: ImageDraw.ImageDraw, y: int, height: int) -> None:
@@ -375,7 +402,8 @@ def render_card(
     if rows:
         _draw_legacy_rank_rows(draw, "breakdown", rows, y, max(row[1] for row in rows))
 
-    draw.text((PAD, LEGACY_HEIGHT - PAD), f"generated {_generated_timestamp()}", font=_font(22), fill=FAINT)
+    footer_y = LEGACY_HEIGHT - PAD - QR_SIZE
+    _layout_footer(draw, _generated_timestamp(), footer_y, do_draw=True, image=img)
     img.save(str(output_path), "PNG")
     return output_path
 

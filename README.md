@@ -110,6 +110,18 @@ Marketplace links:
 - skills.sh: https://skills.sh/cyzlmh/agentype/agentype
 - ClawHub: https://clawhub.ai/cyzlmh/agentype
 
+Install from skills.sh:
+
+```bash
+npx skills add cyzlmh/agentype --skill agentype
+```
+
+Install from ClawHub:
+
+```bash
+npx clawhub@latest install agentype
+```
+
 Required skill loop:
 
 ```bash
