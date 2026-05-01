@@ -1,13 +1,13 @@
 ---
 name: agentype
-description: Analyze local AI-agent usage across Claude Code, Codex, OpenCode, pi-agent, Gemini CLI, OpenClaw, Nanobot, and configured Nanobot-compatible roots to produce a token overview, trends, preferences, and skill signals. The triggering agent should infer a persona from the deterministic output. Use when the user asks to understand their agent usage, AI workflow, token footprint, preferred agents/models/projects, or "agentype".
-version: 0.1.1
+description: Run the Agentype workflow for local AI-agent usage analysis: collect and cache deterministic JSON, infer a persona/archetype from aggregate usage signals, then render a terminal summary or PNG poster. Supports Claude Code, Codex, OpenCode, pi-agent, Gemini CLI, OpenClaw, Nanobot, and configured Nanobot-compatible roots. Use when the user asks to understand their agent usage, AI workflow, token footprint, preferred agents/models/projects, or "agentype".
+version: 0.1.2
 tags: [ai-agents, analytics, persona, tokens, local-first]
 ---
 
 # Agentype
 
-Agentype summarizes a user's local AI-agent history into one deterministic usage overview. Persona discovery is performed by the triggering agent using its own LLM — Agentype itself makes no LLM calls by default.
+Agentype summarizes a user's local AI-agent history into one deterministic usage overview. In skill mode, the triggering agent must run a short workflow: collect and cache JSON, infer the persona/archetype from that JSON, then render the final text or image poster.
 
 ## When to Use
 
@@ -37,9 +37,49 @@ Agentype collects local session and token metadata from supported agents where a
 
 Agentype is fully local in this skill workflow. It reads agent history from disk and prints a terminal summary. Handle persona inference on the agent side rather than asking the CLI to contact external model services.
 
+## Required Skill Workflow
+
+When this skill is triggered by an agent, do the full loop below. The first CLI output is only the raw deterministic stats view; it is not the final user-facing Agentype result.
+
+1. Collect and cache the deterministic analysis:
+
+   ```bash
+   agentype --json-out
+   ```
+
+   From a source checkout, use:
+
+   ```bash
+   uv run agentype --json-out
+   ```
+
+2. Read the cached JSON at `output/agentype.json`.
+3. Infer the user's persona from aggregate signals in the JSON: top projects, agents, models, skill metadata, token shape, and usage rhythm.
+4. Fill these top-level JSON fields in `output/agentype.json`, preserving all other fields:
+   - `archetype`: short persona label.
+   - `description`: one-line explanation of the archetype.
+   - `keywords`: 3-6 concise keywords.
+   - `comment`: 2-3 evidence-grounded sentences starting with "You are a...".
+5. Render the filled JSON:
+
+   ```bash
+   agentype --json-in output/agentype.json
+   ```
+
+   For chat, IM, or gateway environments that can display images, also create the poster image:
+
+   ```bash
+   agentype --json-in output/agentype.json --png-out
+   ```
+
+6. Final response:
+   - Terminal agents: relay the rendered text summary with the persona/archetype and top stats.
+   - Chat or IM gateway agents: send a compact text summary and attach `output/agentype.png` when supported.
+7. Do not expose raw session files, prompts, private transcripts, or full JSON unless the user explicitly asks for debugging data.
+
 ## Run
 
-If Agentype is installed:
+For manual CLI use outside the agent workflow, if Agentype is installed:
 
 ```bash
 agentype
@@ -70,20 +110,22 @@ For unsupported agent layouts, tell the user the collector paths live in `src/ag
 
 ## Output Modes
 
-- Default: poster-style terminal overview with AGENTYPE/persona first, then token usage, breakdowns, and trends. No LLM calls by default.
+- Default: terminal overview with AGENTYPE/persona first when persona fields exist, otherwise deterministic token usage, breakdowns, and trends. No LLM calls by default.
 - `-v`: adds detailed tables for statistics, discovered themes, and data confidence.
 - `--json-out`: writes `output/agentype.json` with the full analysis.
 - `--json-in PATH`: renders a previously written Agentype JSON file. Use this after filling top-level persona fields.
 - `--png-out`: writes `output/agentype.png`, a shareable poster-style summary for chat or IM environments.
-## Agent Instructions
 
-When the user invokes this skill:
+## Debugging
 
-1. Run `agentype --json-out` (or `uv run agentype --json-out` from a source checkout) to collect deterministic local usage into `output/agentype.json`.
-2. Read `output/agentype.json`.
-3. Using your own LLM when needed, infer a persona from the aggregate signals: top projects, agents, models, skill metadata, and usage patterns. Fill these top-level JSON fields: `archetype`, `description`, `keywords`, and `comment`. Keep the comment to 2-3 concise evidence-grounded sentences starting with "You are a...".
-4. Run `agentype --json-in output/agentype.json --png-out` (or `uv run agentype --json-in output/agentype.json --png-out`) to render the final terminal result and shareable PNG from the filled JSON.
-5. Relay the persona and top usage stats to the user in a compact summary. Attach `output/agentype.png` when the environment supports files or images.
-6. If the user asks for debugging or validation, rerun as `agentype -v --json-out` or `uv run agentype -v --json-out`.
-7. Do not expose raw session files, prompts, or private transcripts.
-8. In chat or IM environments, summarize the terminal result compactly and prefer the PNG for share-oriented requests.
+If the user asks for debugging or validation, rerun collection as:
+
+```bash
+agentype -v --json-out
+```
+
+From a source checkout:
+
+```bash
+uv run agentype -v --json-out
+```

@@ -95,16 +95,33 @@ If an agent stores its history somewhere different on your machine, Agentype may
 
 ## Agent Skill Usage
 
-Agentype can also be packaged as an agent skill for marketplaces such as skills.sh and clawhub.ai. When triggered by an agent, it should run the same CLI and summarize the result for the user.
+Agentype can also be packaged as an agent skill for marketplaces such as skills.sh and clawhub.ai. When triggered by an agent, it should run a workflow instead of stopping at the first statistics output.
 
-Recommended skill loop:
+Required skill loop:
 
 ```bash
 agentype --json-out
-# agent reads output/agentype.json and fills archetype, description, keywords, and comment
+```
+
+The agent then reads the cached JSON at `output/agentype.json`, infers the persona/archetype from aggregate usage signals, and fills these top-level fields:
+
+- `archetype`
+- `description`
+- `keywords`
+- `comment`
+
+After the JSON is filled, render the final result:
+
+```bash
+agentype --json-in output/agentype.json
+```
+
+For chat or IM gateway environments that can display images, also render the poster:
+
+```bash
 agentype --json-in output/agentype.json --png-out
 ```
 
-Shell-oriented agents can print the terminal summary. Chat or IM-oriented agents can attach `output/agentype.png`.
+Shell-oriented agents should return the rendered terminal summary. Chat or IM-oriented agents should send a compact summary and attach `output/agentype.png` when supported.
 
 For nonstandard local agent history paths, configure available environment variables first. Nanobot-compatible roots use `AGENTYPE_NANOBOT_ROOTS`; unsupported layouts can be added in `src/agentype/paths.py` or a source adapter under `src/agentype/sources/`.
