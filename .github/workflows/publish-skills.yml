@@ -1,0 +1,47 @@
+name: Publish Skills
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: Validate and publish skills
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Check ClawHub token
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: |
+          if [ -z "$CLAWHUB_TOKEN" ]; then
+            echo "Missing CLAWHUB_TOKEN repository secret."
+            exit 1
+          fi
+
+      - name: Validate skills.sh discovery
+        run: npx --yes skills@latest add "$GITHUB_WORKSPACE" --skill agentype --agent codex -y --copy
+
+      - name: Publish ClawHub skill
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          version="${RELEASE_VERSION#v}"
+          mkdir -p /tmp/agentype-skill
+          cp SKILL.md /tmp/agentype-skill/SKILL.md
+          npx --yes clawhub@latest login --token "$CLAWHUB_TOKEN" --no-browser
+          npx --yes clawhub@latest publish /tmp/agentype-skill \
+            --slug agentype \
+            --name Agentype \
+            --version "$version" \
+            --changelog "Release $RELEASE_VERSION" \
+            --tags latest
