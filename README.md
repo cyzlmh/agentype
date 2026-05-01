@@ -105,6 +105,11 @@ If an agent stores its history somewhere different on your machine, Agentype may
 
 Agentype can also be packaged as an agent skill for marketplaces such as skills.sh and clawhub.ai. When triggered by an agent, it should run a workflow instead of stopping at the first statistics output.
 
+Marketplace links:
+
+- skills.sh: https://skills.sh/cyzlmh/agentype/agentype
+- ClawHub: https://clawhub.ai/cyzlmh/agentype
+
 Required skill loop:
 
 ```bash
