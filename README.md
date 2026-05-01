@@ -1,8 +1,8 @@
 # Agentype
 
-Agentype analyzes your local AI-agent usage and turns it into a private, deterministic terminal overview.
+Agentype analyzes your local AI-agent usage and turns it into a private terminal overview.
 
-It is for people who work across multiple agents and want one summary of their token footprint, usage rhythm, top projects, and preferred agents/models. With an opt-in LLM, it also uses deterministic project and skill context to infer a persona comment, keywords, and an archetype.
+It is for people who work across multiple agents and want one summary of their token footprint, usage rhythm, top projects, and preferred agents/models. With an opt-in LLM, it also uses project and skill context to infer a persona comment, keywords, and an archetype.
 
 ## Supported Agents
 
@@ -70,7 +70,7 @@ agentype --output output --json-out --png-out
 agentype --llm-base-url https://api.openai.com/v1 --llm-api-key sk-... --llm-model gpt-4o
 ```
 
-- `agentype` prints the main deterministic terminal overview.
+- `agentype` prints the main terminal overview.
 - `agentype -v` adds detailed statistics, discovered theme tables, and data confidence.
 - `agentype --json-out` writes `output/agentype.json`.
 - `agentype --json-in PATH` renders a previously written Agentype JSON file. This is meant for skill workflows where the triggering agent fills top-level persona fields before asking the CLI to print or render the final result.
@@ -80,7 +80,7 @@ agentype --llm-base-url https://api.openai.com/v1 --llm-api-key sk-... --llm-mod
 
 ## What It Shows
 
-- Persona poster: AGENTYPE and the LLM-inferred persona first, or a deterministic usage snapshot when no LLM is configured.
+- Persona poster: AGENTYPE and the LLM-inferred persona first, or a usage snapshot when no LLM is configured.
 - Token usage: total, non-cache, cache, input, output, and reasoning tokens where available.
 - Breakdowns: top projects, agents, and model IDs.
 - Usage rhythm: monthly and weekly trend bars.

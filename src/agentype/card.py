@@ -93,22 +93,24 @@ def _layout_header(
     y += _text_height(draw, title, title_font) + 26
 
     if overview.archetype and overview.description:
-        desc_font = _font(28)
+        desc_font = _font_for_text(overview.description, 28)
         lines = _wrap_lines(draw, overview.description, desc_font, CONTENT_WIDTH)
         if do_draw:
             _draw_lines(draw, lines, PAD, y, desc_font, CYAN, 39)
         y += len(lines) * 39 + 26
 
     if overview.archetype and overview.comment:
-        comment_font = _font(30)
-        lines = _wrap_lines(draw, _clean_text(overview.comment), comment_font, CONTENT_WIDTH)
+        comment = _clean_text(overview.comment)
+        comment_font = _font_for_text(comment, 30)
+        lines = _wrap_lines(draw, comment, comment_font, CONTENT_WIDTH)
         if do_draw:
             _draw_lines(draw, lines, PAD, y, comment_font, TEXT, 42)
         y += len(lines) * 42 + 24
 
     if overview.archetype and overview.keywords:
-        keyword_font = _font(21)
-        lines = _wrap_lines(draw, "keywords: " + " / ".join(overview.keywords), keyword_font, CONTENT_WIDTH)
+        keyword_text = "keywords: " + " / ".join(overview.keywords)
+        keyword_font = _font_for_text(keyword_text, 21)
+        lines = _wrap_lines(draw, keyword_text, keyword_font, CONTENT_WIDTH)
         if do_draw:
             _draw_lines(draw, lines, PAD, y, keyword_font, MUTED, 30)
         y += len(lines) * 30
@@ -182,7 +184,8 @@ def _layout_breakdowns(
             max_value = max([value for _, value in rows], default=1)
             for index, (name, value) in enumerate(rows):
                 color = ROW_COLORS[index % len(ROW_COLORS)]
-                draw.text((PAD + 28, row_y), _fit_text(name, 24), font=_font(23), fill=TEXT)
+                label = _fit_text(name, 24)
+                draw.text((PAD + 28, row_y), label, font=_font_for_text(label, 23), fill=TEXT)
                 draw.text((WIDTH - PAD - 140, row_y), _fmt_count(value), font=_font(22), fill=MUTED)
                 _draw_single_bar(
                     draw,
@@ -241,8 +244,7 @@ def _layout_footer(
     if do_draw:
         draw.text((PAD, y), f"generated {generated_at}", font=_font(22), fill=FAINT)
         draw.text((PAD, y + 34), "github.com/cyzlmh/agentype", font=_font(22), fill=CYAN)
-        draw.text((PAD, y + 68), "scan for source, install docs, and marketplace links", font=_font(19), fill=MUTED)
-        draw.text((PAD, y + 104), "agentype", font=_font(22, bold=True), fill=GREEN)
+        draw.text((PAD, y + 82), "agentype", font=_font(22, bold=True), fill=GREEN)
         if image is not None:
             qr = _github_qr()
             image.paste(qr, (WIDTH - PAD - QR_SIZE, y))
@@ -392,7 +394,7 @@ def render_card(
 
     draw.text((PAD, PAD), "$ agentype --png-out", font=_font(26), fill=FAINT)
     _draw_fitted_text(draw, title, PAD, PAD + 58, CONTENT_WIDTH, 62, GREEN, bold=True)
-    _draw_wrapped_text(draw, body, PAD, PAD + 150, CONTENT_WIDTH, _font(30), TEXT, 42, 8)
+    _draw_wrapped_text(draw, body, PAD, PAD + 150, CONTENT_WIDTH, _font_for_text(body, 30), TEXT, 42, 8)
 
     y = 560
     rows = [
@@ -449,7 +451,8 @@ def _draw_legacy_rank_rows(
     row_y = y + 48
     for idx, (name, value) in enumerate(rows):
         color = ROW_COLORS[idx % len(ROW_COLORS)]
-        draw.text((PAD, row_y), _fit_text(name, 24), font=_font(23), fill=TEXT)
+        label = _fit_text(name, 24)
+        draw.text((PAD, row_y), label, font=_font_for_text(label, 23), fill=TEXT)
         _draw_single_bar(draw, PAD + 280, row_y + 10, CONTENT_WIDTH - 340, value, max_value, color, BAR_BG, height=12)
         row_y += 42
 
@@ -505,10 +508,10 @@ def _fit_font(
     bold: bool = False,
 ) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     for size in range(max_size, min_size - 1, -2):
-        font = _font(size, bold=bold)
+        font = _font_for_text(text, size, bold=bold)
         if draw.textlength(text, font=font) <= max_width:
             return font
-    return _font(min_size, bold=bold)
+    return _font_for_text(text, min_size, bold=bold)
 
 
 def _text_height(
@@ -521,17 +524,56 @@ def _text_height(
 
 
 def _font(size: int, *, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    candidates = [
-        "/System/Library/Fonts/Menlo.ttc",
-        "/Library/Fonts/Menlo.ttc",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-    ]
-    for path in candidates:
+    for path in _mono_font_paths(bold=bold):
         try:
             return ImageFont.truetype(path, size)
         except OSError:
             pass
     return ImageFont.load_default()
+
+
+def _font_for_text(
+    text: str,
+    size: int,
+    *,
+    bold: bool = False,
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    candidates = _unicode_font_paths(bold=bold) if _has_non_ascii(text) else _mono_font_paths(bold=bold)
+    for path in candidates:
+        try:
+            return ImageFont.truetype(path, size)
+        except OSError:
+            pass
+    return _font(size, bold=bold)
+
+
+def _has_non_ascii(text: str) -> bool:
+    return any(ord(char) > 127 for char in text)
+
+
+def _mono_font_paths(*, bold: bool) -> list[str]:
+    return [
+        "/System/Library/Fonts/Menlo.ttc",
+        "/Library/Fonts/Menlo.ttc",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    ]
+
+
+def _unicode_font_paths(*, bold: bool) -> list[str]:
+    return [
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/System/Library/Fonts/Hiragino Sans GB.ttc",
+        "/System/Library/Fonts/STHeiti Medium.ttc" if bold else "/System/Library/Fonts/STHeiti Light.ttc",
+        "/System/Library/Fonts/PingFang.ttc",
+        "/System/Library/Fonts/Supplemental/NISC18030.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc" if bold else "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc" if bold else "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "C:/Windows/Fonts/msyhbd.ttc" if bold else "C:/Windows/Fonts/msyh.ttc",
+        "C:/Windows/Fonts/simhei.ttf",
+        *_mono_font_paths(bold=bold),
+    ]
 
 
 def _generated_timestamp() -> str:

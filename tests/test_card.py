@@ -118,3 +118,16 @@ def test_render_overview_card_expands_for_long_llm_persona(tmp_path: Path) -> No
     with Image.open(path) as img:
         assert img.size[0] == 1080
         assert img.size[1] > 1200
+
+
+def test_render_overview_card_handles_non_ascii_persona(tmp_path: Path) -> None:
+    discovery = Discovery(
+        archetype="本地智能体工程师",
+        description="多智能体工作流、私有数据分析、自动化发布",
+        keywords=["本地优先", "智能体", "自动化"],
+        comment="你是一个重视验证和可复现流程的本地智能体工程师。",
+    )
+
+    path = render_overview_card(_overview(discovery), tmp_path / "non-ascii.png")
+
+    assert path.read_bytes().startswith(b"\x89PNG")

@@ -2,13 +2,15 @@
 name: agentype
 description: >-
   Run the Agentype workflow for local AI-agent usage analysis: collect and cache deterministic JSON, infer a persona/archetype from aggregate usage signals, then render a terminal summary or PNG poster. Supports Claude Code, Codex, OpenCode, pi-agent, Gemini CLI, OpenClaw, Nanobot, and configured Nanobot-compatible roots. Use when the user asks to understand their agent usage, AI workflow, token footprint, preferred agents/models/projects, or "agentype".
-version: 0.1.6
+version: 0.1.7
 tags: [ai-agents, analytics, persona, tokens, local-first]
 ---
 
 # Agentype
 
-Agentype summarizes a user's local AI-agent history into one deterministic usage overview. In skill mode, the triggering agent must run a short workflow: collect and cache JSON, infer the persona/archetype from that JSON, then render the final text or image poster.
+Agentype summarizes a user's local AI-agent history into a persona/archetype and usage overview.
+
+**When this skill is triggered, you MUST complete all four steps below.** Do not stop after collecting stats, do not skip persona inference, and do not skip delivering the final poster or summary to the user.
 
 ## When to Use
 
@@ -36,105 +38,76 @@ Agentype collects local session and token metadata from supported agents where a
 - Nanobot
 - Nanobot-compatible JSONL roots configured through `AGENTYPE_NANOBOT_ROOTS`
 
-Agentype is fully local in this skill workflow. It reads agent history from disk and prints a terminal summary. Handle persona inference on the agent side rather than asking the CLI to contact external model services.
-
-## Required Skill Workflow
-
-When this skill is triggered by an agent, do the full loop below. The first CLI output is only the raw deterministic stats view; it is not the final user-facing Agentype result.
+## Required Workflow (all four steps are mandatory)
 
 The PyPI distribution is `agentype-cli` because `agentype` is not available on PyPI. The installed command is still `agentype`.
 
-1. Collect and cache the deterministic analysis:
+### Step 1 — Collect stats
 
-   ```bash
-   agentype --json-out
-   ```
-
-   If `agentype` is not installed and there is no source checkout, run the published CLI directly:
-
-   ```bash
-   uvx --from agentype-cli agentype --json-out
-   ```
-
-   From a source checkout, use:
-
-   ```bash
-   uv run agentype --json-out
-   ```
-
-2. Read the cached JSON at `output/agentype.json`.
-3. Infer the user's persona from aggregate signals in the JSON: top projects, agents, models, skill metadata, token shape, and usage rhythm.
-4. Fill these top-level JSON fields in `output/agentype.json`, preserving all other fields:
-   - `archetype`: short persona label.
-   - `description`: one-line explanation of the archetype.
-   - `keywords`: 3-6 concise keywords.
-   - `comment`: 2-3 evidence-grounded sentences starting with "You are a...".
-5. Render the filled JSON:
-
-   ```bash
-   agentype --json-in output/agentype.json
-   ```
-
-   For chat, IM, or gateway environments that can display images, also create the poster image:
-
-   ```bash
-   agentype --json-in output/agentype.json --png-out
-   ```
-
-6. Final response:
-   - Terminal agents: relay the rendered text summary with the persona/archetype and top stats.
-   - Chat or IM gateway agents: send a compact text summary and attach `output/agentype.png` when supported.
-7. Do not expose raw session files, prompts, private transcripts, or full JSON unless the user explicitly asks for debugging data.
-
-## Run
-
-For manual CLI use outside the agent workflow, if Agentype is installed:
+Run the CLI with `--json-out` to collect deterministic usage data and write it to `output/agentype.json`:
 
 ```bash
-agentype
+agentype --json-out
 ```
 
-If working from a source checkout:
+If `agentype` is not installed and there is no source checkout:
 
 ```bash
-uv run agentype
-```
-
-For users without `uv`, prefer installing the published CLI:
-
-```bash
-pipx install agentype-cli
-agentype
-```
-
-## Custom Local Paths
-
-If a user's agent history lives outside the default locations, ask for the relevant root and configure it before running Agentype. Nanobot-compatible JSONL roots can be added with `AGENTYPE_NANOBOT_ROOTS`:
-
-```bash
-AGENTYPE_NANOBOT_ROOTS="/path/to/workspace:/path/to/another/root" agentype --json-out
-```
-
-For unsupported agent layouts, tell the user the collector paths live in `src/agentype/paths.py` and source adapters live in `src/agentype/sources/`, so they can add their own local path or adapter before publishing private stats.
-
-## Output Modes
-
-- Default: terminal overview with AGENTYPE/persona first when persona fields exist, otherwise deterministic token usage, breakdowns, and trends. No LLM calls by default.
-- `-v`: adds detailed tables for statistics, discovered themes, and data confidence.
-- `--json-out`: writes `output/agentype.json` with the full analysis.
-- `--json-in PATH`: renders a previously written Agentype JSON file. Use this after filling top-level persona fields.
-- `--png-out`: writes `output/agentype.png`, a shareable poster-style summary for chat or IM environments.
-
-## Debugging
-
-If the user asks for debugging or validation, rerun collection as:
-
-```bash
-agentype -v --json-out
+uvx --from agentype-cli agentype --json-out
 ```
 
 From a source checkout:
 
 ```bash
-uv run agentype -v --json-out
+uv run agentype --json-out
+```
+
+> The CLI output at this point is raw stats only — it is **not** the final result. Continue to the next step.
+
+### Step 2 — Infer and fill the persona (agent-side, no CLI call)
+
+Read `output/agentype.json`. From the aggregate signals — top projects, agents, models, skill metadata, token shape, and usage rhythm — infer the user's persona yourself. Then write these four top-level fields back into `output/agentype.json`, preserving all other fields:
+
+- `archetype`: short persona label (e.g. "Polyglot Automator").
+- `description`: one-line explanation of the archetype.
+- `keywords`: 3–6 concise keywords.
+- `comment`: 2–3 evidence-grounded sentences starting with "You are a...".
+
+### Step 3 — Render the filled JSON
+
+Pass the updated file back to the CLI to produce the final formatted output:
+
+```bash
+agentype --json-in output/agentype.json
+```
+
+For chat, IM, or gateway environments that can display images, also generate the poster:
+
+```bash
+agentype --json-in output/agentype.json --png-out
+```
+
+### Step 4 — Deliver to the user
+
+- **Terminal agents**: relay the full rendered text output (persona/archetype + top stats) directly to the user.
+- **Chat or IM gateway agents**: send a compact text summary and attach `output/agentype.png`.
+
+Do not expose raw session files, prompts, private transcripts, or full JSON unless the user explicitly asks for debugging data.
+
+## Custom Local Paths
+
+If the user's agent history lives outside default locations, configure `AGENTYPE_NANOBOT_ROOTS` before Step 1:
+
+```bash
+AGENTYPE_NANOBOT_ROOTS="/path/to/workspace:/path/to/another/root" agentype --json-out
+```
+
+For unsupported agent layouts, the collector paths live in `src/agentype/paths.py` and source adapters in `src/agentype/sources/`.
+
+## Debugging
+
+If the user asks for debugging or validation, re-run Step 1 with `-v` and share the verbose output:
+
+```bash
+agentype -v --json-out
 ```
