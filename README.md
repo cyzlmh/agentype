@@ -27,6 +27,8 @@ AGENTYPE_NANOBOT_ROOTS="/path/to/app:/path/to/another/app" agentype
 
 ## Install
 
+The PyPI distribution is `agentype-cli` because `agentype` is not available on PyPI. The installed command is still `agentype`.
+
 The recommended CLI install is:
 
 ```bash
@@ -39,6 +41,12 @@ If you do not use `pipx`, a regular pip install should also work:
 ```bash
 pip install agentype-cli
 agentype
+```
+
+For one-off runs without installing the command permanently:
+
+```bash
+uvx --from agentype-cli agentype
 ```
 
 For source checkout development:

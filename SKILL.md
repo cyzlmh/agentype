@@ -1,7 +1,7 @@
 ---
 name: agentype
 description: Run the Agentype workflow for local AI-agent usage analysis: collect and cache deterministic JSON, infer a persona/archetype from aggregate usage signals, then render a terminal summary or PNG poster. Supports Claude Code, Codex, OpenCode, pi-agent, Gemini CLI, OpenClaw, Nanobot, and configured Nanobot-compatible roots. Use when the user asks to understand their agent usage, AI workflow, token footprint, preferred agents/models/projects, or "agentype".
-version: 0.1.2
+version: 0.1.3
 tags: [ai-agents, analytics, persona, tokens, local-first]
 ---
 
@@ -41,10 +41,18 @@ Agentype is fully local in this skill workflow. It reads agent history from disk
 
 When this skill is triggered by an agent, do the full loop below. The first CLI output is only the raw deterministic stats view; it is not the final user-facing Agentype result.
 
+The PyPI distribution is `agentype-cli` because `agentype` is not available on PyPI. The installed command is still `agentype`.
+
 1. Collect and cache the deterministic analysis:
 
    ```bash
    agentype --json-out
+   ```
+
+   If `agentype` is not installed and there is no source checkout, run the published CLI directly:
+
+   ```bash
+   uvx --from agentype-cli agentype --json-out
    ```
 
    From a source checkout, use:

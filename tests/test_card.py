@@ -4,7 +4,7 @@ from PIL import Image
 
 from agentype import _poster_text
 from agentype.analysis import Discovery, ThemeScore, build_agentype_overview, build_usage_report
-from agentype.card import render_overview_card
+from agentype.card import _display_period, _trend_groups, render_overview_card
 from agentype.sources.base import SessionEvent, TokenUsage
 
 
@@ -79,6 +79,15 @@ def test_render_overview_card_writes_png_for_llm_and_no_llm(tmp_path: Path) -> N
 
     assert no_llm_path.read_bytes().startswith(b"\x89PNG")
     assert llm_path.read_bytes().startswith(b"\x89PNG")
+
+
+def test_poster_uses_monthly_and_weekly_usage_trends() -> None:
+    monthly, weekly = _trend_groups(_overview())
+
+    assert monthly[0] == "Monthly"
+    assert [item.period for item in monthly[1]] == ["2026-04"]
+    assert weekly[0] == "Weekly"
+    assert [_display_period(item.period) for item in weekly[1]] == ["2026-04-27..05-03"]
 
 
 def test_render_overview_card_expands_for_long_llm_persona(tmp_path: Path) -> None:

@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import textwrap
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .analysis import AgentypeOverview
+from .analysis import AgentypeOverview, PeriodStats
 
 WIDTH = 1080
 MIN_HEIGHT = 1200
@@ -52,6 +52,7 @@ def _measure_overview_height(overview: AgentypeOverview, generated_at: str) -> i
     y = _layout_header(draw, overview, PAD, do_draw=False)
     y = _layout_token_block(draw, overview, y + 64, do_draw=False)
     y = _layout_breakdowns(draw, overview, y + 58, do_draw=False)
+    y = _layout_usage_rhythm(draw, overview, y + 30, do_draw=False)
     y = _layout_footer(draw, generated_at, y + 34, do_draw=False)
     return max(MIN_HEIGHT, y + PAD)
 
@@ -65,6 +66,7 @@ def _draw_overview(
     y = _layout_header(draw, overview, PAD, do_draw=True)
     y = _layout_token_block(draw, overview, y + 64, do_draw=True)
     y = _layout_breakdowns(draw, overview, y + 58, do_draw=True)
+    y = _layout_usage_rhythm(draw, overview, y + 30, do_draw=True)
     _layout_footer(draw, generated_at, y + 34, do_draw=True)
     draw.text((WIDTH - PAD - 116, height - PAD + 16), "agentype", font=_font(22, bold=True), fill=GREEN)
 
@@ -195,6 +197,36 @@ def _layout_breakdowns(
     return y
 
 
+def _layout_usage_rhythm(
+    draw: ImageDraw.ImageDraw,
+    overview: AgentypeOverview,
+    y: int,
+    *,
+    do_draw: bool,
+) -> int:
+    groups = _trend_groups(overview)
+    row_h = 42
+    panel_h = 78 + sum(42 + max(1, len(rows)) * row_h for _, rows in groups)
+    if do_draw:
+        _panel(draw, y, panel_h)
+        draw.text((PAD + 28, y + 28), "3. Usage Rhythm", font=_font(27, bold=True), fill=GREEN)
+        row_y = y + 84
+        for title, rows in groups:
+            values = [item.tokens_with_cache for item in rows]
+            sparkline = _sparkline(values) if values else "-"
+            draw.text((PAD + 28, row_y), f"{title} {sparkline}", font=_font(24, bold=True), fill=CYAN)
+            row_y += 42
+            if not rows:
+                draw.text((PAD + 52, row_y), "-", font=_font(22), fill=FAINT)
+                row_y += row_h
+                continue
+            max_value = max(values)
+            for item in rows:
+                _draw_period_bar(draw, item, max_value, row_y)
+                row_y += row_h
+    return y + panel_h
+
+
 def _layout_footer(draw: ImageDraw.ImageDraw, generated_at: str, y: int, *, do_draw: bool) -> int:
     if do_draw:
         draw.text((PAD, y), f"generated {generated_at}", font=_font(22), fill=FAINT)
@@ -218,6 +250,35 @@ def _breakdown_groups(overview: AgentypeOverview, *, limit: int) -> list[tuple[s
             ][:limit],
         ),
     ]
+
+
+def _trend_groups(overview: AgentypeOverview, *, limit: int = 8) -> list[tuple[str, list[PeriodStats]]]:
+    return [
+        ("Monthly", overview.statistics.monthly[-limit:]),
+        ("Weekly", overview.statistics.weekly[-limit:]),
+    ]
+
+
+def _draw_period_bar(
+    draw: ImageDraw.ImageDraw,
+    item: PeriodStats,
+    max_value: int,
+    y: int,
+) -> None:
+    label = _fit_text(_display_period(item.period), 19)
+    draw.text((PAD + 52, y), f"{label:<19}", font=_font(21), fill=TEXT)
+    _draw_single_bar(
+        draw,
+        PAD + 360,
+        y + 10,
+        CONTENT_WIDTH - 520,
+        item.tokens_with_cache,
+        max_value,
+        CYAN,
+        BAR_BG,
+        height=12,
+    )
+    draw.text((WIDTH - PAD - 140, y), _fmt_count(item.tokens_with_cache), font=_font(21), fill=MUTED)
 
 
 def _draw_stacked_bar(
@@ -260,6 +321,31 @@ def _draw_single_bar(
     filled = int(width * (value / max_value)) if max_value > 0 else 0
     if filled > 0:
         draw.rounded_rectangle([x, y, x + filled, y + height], radius=height // 2, fill=color)
+
+
+def _sparkline(values: list[int]) -> str:
+    if not values:
+        return "-"
+    levels = "▁▂▃▄▅▆▇█"
+    high = max(values)
+    low = min(values)
+    if high == low:
+        return levels[-1] * len(values)
+    return "".join(levels[round((value - low) / (high - low) * (len(levels) - 1))] for value in values)
+
+
+def _display_period(period: str) -> str:
+    if "-W" not in period:
+        return period
+    try:
+        year_text, week_text = period.split("-W", 1)
+        start = datetime.fromisocalendar(int(year_text), int(week_text), 1).date()
+    except ValueError:
+        return period
+    end = start + timedelta(days=6)
+    if start.year == end.year and start.month == end.month:
+        return f"{start:%Y-%m-%d}..{end:%d}"
+    return f"{start:%Y-%m-%d}..{end:%m-%d}"
 
 
 def render_card(
